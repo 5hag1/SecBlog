@@ -16,11 +16,11 @@ minimal_mistakes_skin    : "dark" # "air", "aqua", "contrast", "dark", "dirt", "
 
 # Site Settings
 locale                   : "en-US"
-title                    : "snowscan.io"
+title                    : "5hag1.SecBlog"
 title_separator          : "-"
 name                     : "Snowscan"
 description              : "Posts about security, CTFs and networking"
-url                      : "https://snowscan.io" # the base hostname & protocol for your site e.g. "https://mmistakes.github.io"
+url                      : "https://5hag1.github.io/SecBlog/" # the base hostname & protocol for your site e.g. "https://mmistakes.github.io"
 baseurl                  : # the subpath of your site, e.g. "/blog"
 repository               : "slemire/slemire.github.io" # GitHub username/repo-name e.g. "mmistakes/minimal-mistakes"
 logo                     : "/assets/images/masthead.png"
@@ -103,7 +103,7 @@ analytics:
 author:
   name             : "Jorge Cultid"
   avatar           : "/assets/images/avatar.png"
-  bio              : "Pentester, CTF player<br>HackTheBox ATeam"
+  bio              : "SOC Analyst | Incident Handler | Threat Intelligence Analyst | ISO 27001 | ISO 20000-1 | Itil | Analista de riesgos | Datos personales | PRD | Zabbix"
   location         : "Colombia"
   email            : "info@snowscan.io"
   uri              :
@@ -114,7 +114,7 @@ author:
   flickr           :
   facebook         :
   foursquare       :
-  github           : "slemire"
+  github           : "5hag1"
   gitlab           :
   google_plus      :
   keybase          : "snowscan"
