@@ -18,12 +18,12 @@ minimal_mistakes_skin    : "dark" # "air", "aqua", "contrast", "dark", "dirt", "
 locale                   : "en-US"
 title                    : "5hag1.SecBlog"
 title_separator          : "-"
-name                     : "Snowscan"
+name                     : "Shagi"
 description              : "Posts about security, CTFs and networking"
 url                      : "https://5hag1.github.io/SecBlog/" # the base hostname & protocol for your site e.g. "https://mmistakes.github.io"
 baseurl                  : # the subpath of your site, e.g. "/blog"
 repository               : "slemire/slemire.github.io" # GitHub username/repo-name e.g. "mmistakes/minimal-mistakes"
-logo                     : "/assets/images/masthead.png"
+logo                     : "/assets/images/shagi.png"
 teaser                   : # path of fallback teaser image, e.g. "/assets/images/500x300.png"
 breadcrumbs              : true # true, false (default)
 words_per_minute         : 200
@@ -101,7 +101,7 @@ analytics:
 
 # Site Author
 author:
-  name             : "Jorge Cultid"
+  name             : "5hag1"
   avatar           : "/assets/images/avatar.png"
   bio              : "SOC Analyst | Incident Handler | Threat Intelligence Analyst | ISO 27001 | ISO 20000-1 | Itil | Analista de riesgos | Datos personales | PRD | Zabbix"
   location         : "Colombia"
