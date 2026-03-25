@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Clasificador de Phishing con Agente IA</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 1.5rem; background:#f4f7fb; color:#111827; }
+    h1 { margin-bottom: .3rem; }
+    .lead { color:#374151; margin-bottom:1rem; }
+    .phishing-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:1rem; margin-bottom:1rem; }
+    .phishing-card { background:#fff; border:1px solid #dfe3ea; border-radius:8px; padding:1rem; }
+    .phishing-card label { display:block; font-weight:600; margin-bottom:.35rem; }
+    .phishing-card textarea, .phishing-card input, .phishing-card select { width:100%; margin-bottom:.8rem; border:1px solid #cfd5df; border-radius:6px; padding:.6rem; font-size:.95rem; box-sizing:border-box; }
+    #analyzeBtn { background:#0e7490; color:#fff; border:none; border-radius:6px; padding:.7rem 1rem; cursor:pointer; font-weight:700; }
+    .result-box { margin-top:1rem; border:1px solid #dfe3ea; border-left:5px solid #0e7490; border-radius:8px; padding:1rem; background:#fff; }
+    .result-badge { display:inline-block; font-weight:700; border-radius:999px; padding:.2rem .7rem; margin-bottom:.5rem; }
+    .risk-high { background:#fee2e2; color:#991b1b; }
+    .risk-low { background:#dcfce7; color:#166534; }
+    .risk-mid { background:#fef9c3; color:#854d0e; }
+  </style>
+</head>
+<body>
+  <h1>Clasificador de Phishing con Agente IA</h1>
+  <p class="lead">Analiza header, SPF/DKIM, dominio, URL y hash de adjunto para dar una respuesta automática al usuario final.</p>
+
+  <div class="phishing-grid">
+    <div class="phishing-card">
+      <label for="headers">Analiza header (pega cabeceras crudas)</label>
+      <textarea id="headers" rows="9"></textarea>
+      <label for="spf">Revisa SPF</label>
+      <select id="spf"><option value="neutral">Neutral</option><option value="pass">Pass</option><option value="fail">Fail</option><option value="softfail">Softfail</option></select>
+      <label for="dkim">Revisa DKIM</label>
+      <select id="dkim"><option value="neutral">Neutral</option><option value="pass">Pass</option><option value="fail">Fail</option><option value="temperror">TempError</option></select>
+    </div>
+    <div class="phishing-card">
+      <label for="senderDomain">Evalúa dominio remitente</label>
+      <input id="senderDomain" type="text" placeholder="secure-paypa1-support.com" />
+      <label for="urls">Revisa URL (una por línea)</label>
+      <textarea id="urls" rows="6"></textarea>
+      <label for="hash">Revisa adjunto (hash)</label>
+      <input id="hash" type="text" placeholder="SHA256/MD5" />
+      <label for="threatIntel">Inteligencia externa</label>
+      <select id="threatIntel"><option value="unknown">No consultado</option><option value="clean">Limpio</option><option value="suspicious">Sospechoso</option><option value="malicious">Malicioso</option></select>
+    </div>
+  </div>
+
+  <button id="analyzeBtn">Analizar correo</button>
+  <div id="result" class="result-box">Completa los campos y pulsa <strong>Analizar correo</strong>.</div>
+
+<script>
+const suspiciousKeywords=["urgent","verify","reset","invoice","payment","confirm","security","password","bank","signin"];
+const suspiciousTlds=[".zip",".mov",".click",".top",".xyz",".gq"];
+const knownBrands=["paypal","microsoft","google","apple","amazon","banco","bbva","santander"];
+
+const scoreHeaders=(raw)=>{let score=0;const f=[];const h=(raw||"").toLowerCase();if(!h.trim()) return {score:8,findings:["No se proporcionaron headers completos."]};if(!h.includes("received:")){score+=15;f.push("Falta cadena Received.");}if(h.includes("reply-to:")&&h.includes("from:")){const from=(h.match(/from:\s*([^\n]+)/)||[])[1]||"";const reply=(h.match(/reply-to:\s*([^\n]+)/)||[])[1]||"";if(from&&reply&&from!==reply){score+=20;f.push("Reply-To no coincide con From.");}}return {score,findings:f};};
+const scoreAuth=(spf,dkim)=>{let score=0;const f=[];const m={pass:-10,neutral:3,softfail:18,fail:30,temperror:15};score+=(m[spf]||0)+(m[dkim]||0);if(spf==="fail"||dkim==="fail") f.push("Fallo SPF/DKIM.");if(spf==="pass"&&dkim==="pass") f.push("SPF y DKIM en PASS.");return {score,findings:f};};
+const scoreDomain=(d0)=>{let score=0;const f=[];const d=(d0||"").toLowerCase().trim();if(!d) return {score:6,findings:["No se ingresó dominio remitente."]};if(d.includes("--")||/\d/.test(d)){score+=10;f.push("Dominio con patrón atípico.");}if(knownBrands.some(b=>d.includes(b))&&/[01]/.test(d)){score+=18;f.push("Posible typosquatting de marca.");}if(suspiciousTlds.some(t=>d.endsWith(t))){score+=16;f.push("TLD de alto riesgo.");}return {score,findings:f};};
+const scoreUrls=(txt)=>{let score=0;const f=[];const urls=(txt||"").split(/\n+/).map(u=>u.trim()).filter(Boolean);if(!urls.length) return {score:4,findings:["No se proporcionaron URLs."]};urls.forEach(u=>{const l=u.toLowerCase();if(l.startsWith("http://")){score+=12;f.push(`URL sin TLS: ${u}`);}if(l.includes("@")||l.includes("%40")){score+=14;f.push(`URL ofuscada con @: ${u}`);}if(l.length>90){score+=7;f.push(`URL excesivamente larga: ${u.slice(0,80)}...`);}if(suspiciousKeywords.some(k=>l.includes(k))){score+=8;f.push(`Palabras de ingeniería social: ${u}`);}});return {score,findings:f};};
+const scoreHash=(h0,intel)=>{let score=0;const f=[];const h=(h0||"").trim();if(!h){score+=5;f.push("No se ingresó hash.");}else if(![32,40,64].includes(h.length)){score+=7;f.push("Formato de hash no válido.");}const m={unknown:0,clean:-8,suspicious:22,malicious:40};score+=(m[intel]||0);if(intel==="malicious") f.push("Hash/dominio marcado como malicioso.");if(intel==="suspicious") f.push("Hash/dominio con detecciones sospechosas.");return {score,findings:f};};
+const classify=(s)=>s>=70?{label:"Correo malicioso confirmado",css:"risk-high",rec:["Aislar correo y bloquear IOCs.","Hacer búsqueda retroactiva en buzones/endpoints.","Escalar al SOC/CSIRT."]}:s>=35?{label:"Recomendaciones",css:"risk-mid",rec:["Tratar como sospechoso hasta validación adicional.","Validar remitente por canal alterno.","No abrir adjuntos ni enlaces."]}:{label:"Correo legítimo",css:"risk-low",rec:["Registrar evaluación.","Reevaluar si cambia el contexto."]};
+
+document.getElementById("analyzeBtn").addEventListener("click",()=>{
+  const modules=[scoreHeaders(headers.value),scoreAuth(spf.value,dkim.value),scoreDomain(senderDomain.value),scoreUrls(urls.value),scoreHash(hash.value,threatIntel.value)];
+  const total=Math.max(0,modules.reduce((a,m)=>a+m.score,0));
+  const findings=modules.flatMap(m=>m.findings);
+  const r=classify(total);
+  result.innerHTML=`<div class="result-badge ${r.css}">${r.label}</div><p><strong>Score de riesgo:</strong> ${total}/100</p><p><strong>Hallazgos del agente:</strong></p><ul>${(findings.map(x=>`<li>${x}</li>`).join('')||"<li>Sin hallazgos críticos.</li>")}</ul><p><strong>Recomendaciones:</strong></p><ul>${r.rec.map(x=>`<li>${x}</li>`).join('')}</ul>`;
+});
+</script>
+</body>
+</html>
